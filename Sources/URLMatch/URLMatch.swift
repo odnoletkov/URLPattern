@@ -82,9 +82,9 @@ public extension URL {
         case duplicateParameterInPattern
     }
 
-    func fillPattern(_ params: [String: String]) throws -> URL {
+    func inflate(_ params: [String: String]) throws -> URL {
         guard var components = URLComponents(url: self, resolvingAgainstBaseURL: false) else {
-            throw FillError.invalidURL
+            throw InflateError.invalidURL
         }
 
         components.path = NSString.path(
@@ -93,7 +93,7 @@ public extension URL {
                     if let providedValue = params[component] {
                         providedValue
                     } else {
-                        throw FillError.missingParameter(component)
+                        throw InflateError.missingParameter(component)
                     }
                 } else {
                     component
@@ -109,7 +109,7 @@ public extension URL {
                     if item.value == nil {
                         nil
                     } else {
-                        throw FillError.missingParameter(item.name)
+                        throw InflateError.missingParameter(item.name)
                     }
                 }
             } else {
@@ -118,13 +118,13 @@ public extension URL {
         }
 
         guard let url = components.url else {
-            throw FillError.invalidURL
+            throw InflateError.invalidURL
         }
 
         return url
     }
 
-    enum FillError: Error, Equatable {
+    enum InflateError: Error, Equatable {
         case missingParameter(String)
         case invalidURL
     }

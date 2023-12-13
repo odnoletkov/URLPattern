@@ -107,7 +107,7 @@ class URLMatchingTests: XCTestCase {
     func testFill() throws {
         XCTAssertEqual(
             try URL(string: "s://h/:p1/v2?q1&:q2=&q3=x&q4")!
-                .fillPattern(
+                .inflate(
                     [
                         ":p1": "v1",
                         ":q2": "3",
@@ -118,7 +118,7 @@ class URLMatchingTests: XCTestCase {
 
         XCTAssertEqual(
             try URL(string: "?required=1&:optional&:notfound&:reqvalue=")!
-                .fillPattern(
+                .inflate(
                     [
                         ":optional": "2",
                         ":reqvalue": "3",
@@ -130,30 +130,30 @@ class URLMatchingTests: XCTestCase {
 
     func testFillErrors() {
         XCTAssertThrowsError(
-            try URL(string: "path/:a")!.fillPattern([:])
-        ) { XCTAssertEqual($0 as? URL.FillError, .missingParameter(":a")) }
+            try URL(string: "path/:a")!.inflate([:])
+        ) { XCTAssertEqual($0 as? URL.InflateError, .missingParameter(":a")) }
 
         XCTAssertEqual(
-            try URL(string: "path/:a")!.fillPattern([":a": "a"]),
+            try URL(string: "path/:a")!.inflate([":a": "a"]),
             URL(string: "path/a")!
         )
 
         XCTAssertThrowsError(
-            try URL(string: "?:a=")!.fillPattern([:])
-        ) { XCTAssertEqual($0 as? URL.FillError, .missingParameter(":a")) }
+            try URL(string: "?:a=")!.inflate([:])
+        ) { XCTAssertEqual($0 as? URL.InflateError, .missingParameter(":a")) }
 
         XCTAssertEqual(
-            try URL(string: "?:a=b")!.fillPattern([":a": "a"]),
+            try URL(string: "?:a=b")!.inflate([":a": "a"]),
             URL(string: "?a=a")!
         )
 
         XCTAssertEqual(
-            try URL(string: "?:a")!.fillPattern([:]),
+            try URL(string: "?:a")!.inflate([:]),
             URL(string: "?")!
         )
 
         XCTAssertEqual(
-            try URL(string: "?:a")!.fillPattern([":a": "a"]),
+            try URL(string: "?:a")!.inflate([":a": "a"]),
             URL(string: "?a=a")!
         )
     }
