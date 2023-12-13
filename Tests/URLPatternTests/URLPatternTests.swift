@@ -1,9 +1,9 @@
 import XCTest
-import URLMatch
+import URLPattern
 
 // https://github.com/cweb/url-testing
 
-class URLMatchingTests: XCTestCase {
+class URLPatternTests: XCTestCase {
     func testMatch() throws {
         XCTAssertEqual(
             try URL(string: "s://h/:p1/v2?q1&:q2=&q3=x&q4")!

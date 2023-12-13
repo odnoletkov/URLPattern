@@ -3,12 +3,12 @@
 import PackageDescription
 
 let package = Package(
-    name: "URLMatch",
+    name: "URLPattern",
     products: [
-        .library(name: "URLMatch", targets: ["URLMatch"]),
+        .library(name: "URLPattern", targets: ["URLPattern"]),
     ],
     targets: [
-        .target(name: "URLMatch"),
-        .testTarget(name: "URLMatchTests", dependencies: ["URLMatch"]),
+        .target(name: "URLPattern"),
+        .testTarget(name: "URLPatternTests", dependencies: ["URLPattern"]),
     ]
 )
