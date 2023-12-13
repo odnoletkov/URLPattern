@@ -1,12 +1,12 @@
 import Foundation
 
-extension URL {
+public extension URL {
     /// 1. When present in `pattern` scheme, host, user, password, port and fragment should match exactly
     /// 2. Path should match exactly; path components prefixed with ':' will be captured in the output
     /// 3. Pattern's query items should be a subset of receiver's query items
     /// 4. Prefix a query parameter's name with ':' and make the value empty to make it a required parameter captured in output
     /// 5. Prefix a query parameter's name with ':' and leave it without value to make it optional parameter captured in output
-    public func match(pattern: URL) -> [String: String]? {
+    func match(pattern: URL) -> [String: String]? {
         guard
             pattern.scheme == nil || pattern.scheme == scheme,
             pattern.host == nil || pattern.host == host,
@@ -74,5 +74,55 @@ extension URL {
         return pathParameters.merging(
             queryParameters.compactMap { key, value in value.map { (key, $0) } }
         ) { $1 }
+    }
+
+    enum PatternFillError: Error {
+        case missingParameter(String)
+        case invalidURL
+    }
+
+    func fillPattern(_ params: [String: String]) throws -> URL {
+        guard var components = URLComponents(url: self, resolvingAgainstBaseURL: false) else {
+            throw PatternFillError.invalidURL
+        }
+
+        components.path = NSString.path(
+            withComponents: try pathComponents.map { component in
+                if component.hasPrefix(":") {
+                    if let providedValue = params[component] {
+                        providedValue
+                    } else {
+                        throw PatternFillError.missingParameter(component)
+                    }
+                } else {
+                    component
+                }
+            }
+        )
+
+        components.queryItems = try components.queryItems?.compactMap { item in
+            if item.name.hasPrefix(":") {
+                if let providedValue = params[item.name] {
+                    .init(name: (item.name as NSString).substring(from: 1), value: providedValue)
+                } else {
+                    switch item.value {
+                    case nil:
+                        nil
+                    case "":
+                        throw PatternFillError.missingParameter(item.name)
+                    case .some:
+                        item
+                    }
+                }
+            } else {
+                item
+            }
+        }
+
+        guard let url = components.url else {
+            throw PatternFillError.invalidURL
+        }
+
+        return url
     }
 }
