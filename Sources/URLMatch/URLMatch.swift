@@ -6,18 +6,20 @@ public extension URL {
     /// 3. Pattern's query items should be a subset of receiver's query items
     /// 4. Prefix a query parameter's name with ':' and make the value empty to make it a required parameter captured in output
     /// 5. Prefix a query parameter's name with ':' and leave it without value to make it optional parameter captured in output
-    func match(pattern: URL) -> [String: String]? {
-        guard
-            pattern.scheme == nil || pattern.scheme == scheme,
-            pattern.host == nil || pattern.host == host,
-            pattern.user == nil || pattern.user == user,
-            pattern.password == nil || pattern.password == password,
-            pattern.port == nil || pattern.port == port,
-            pattern.fragment == nil || pattern.fragment == fragment,
-            pattern.pathComponents.count == pathComponents.count
-        else {
-            return nil
+    func match(pattern: URL) throws -> [String: String] {
+
+        func check<T: Comparable>(_ keyPath: KeyPath<URL, T?>) throws {
+            if let patternValue = pattern[keyPath: keyPath],
+               self[keyPath: keyPath] != patternValue {
+                throw MatchError.componentDoesNotMatch(keyPath)
+            }
         }
+        try check(\.scheme)
+        try check(\.host)
+        try check(\.user)
+        try check(\.password)
+        try check(\.port)
+        try check(\.fragment)
 
         let pathParameters = Dictionary(
             zip(pattern.pathComponents, pathComponents)
@@ -25,13 +27,13 @@ public extension URL {
         ) { $1 }
         let rewrittenPath = pattern.pathComponents.map { pathParameters[$0] ?? $0 }
         guard rewrittenPath.elementsEqual(pathComponents) else {
-            return nil
+            throw MatchError.pathDoesNotMatch
         }
 
         guard let components = URLComponents(url: self, resolvingAgainstBaseURL: false),
               let patternComponents = URLComponents(url: pattern, resolvingAgainstBaseURL: false)
         else {
-            return nil
+            throw MatchError.invalidURL
         }
         let queryDictionary = Dictionary(
             (components.queryItems ?? []).map { ($0.name, $0.value) }
@@ -58,8 +60,10 @@ public extension URL {
                     return item
                 }
             }
-        guard Set(rewrittenQuery).isSubset(of: components.queryItems ?? []) else {
-            return nil
+
+        let missingQueryItems = Set(rewrittenQuery).subtracting(components.queryItems ?? [])
+        guard missingQueryItems.isEmpty else {
+            throw MatchError.missingQueryItems(missingQueryItems)
         }
 
         queryParameters.merge(
@@ -76,9 +80,11 @@ public extension URL {
         ) { $1 }
     }
 
-    enum PatternFillError: Error {
-        case missingParameter(String)
+    enum MatchError: Error, Equatable {
+        case componentDoesNotMatch(PartialKeyPath<URL>)
+        case pathDoesNotMatch
         case invalidURL
+        case missingQueryItems(Set<URLQueryItem>)
     }
 
     func fillPattern(_ params: [String: String]) throws -> URL {
@@ -124,5 +130,10 @@ public extension URL {
         }
 
         return url
+    }
+
+    enum PatternFillError: Error {
+        case missingParameter(String)
+        case invalidURL
     }
 }
