@@ -8,25 +8,25 @@ public extension URL {
     /// 5. Prefix a query parameter's name with ':' and leave it without value to make it optional parameter captured in output
     func match(pattern: URL) throws -> [String: String] {
 
-        func check<T: Comparable>(_ keyPath: KeyPath<URL, T?>) throws {
+        func match<T: Comparable>(_ keyPath: KeyPath<URL, T?>) throws {
             if let patternValue = pattern[keyPath: keyPath],
                self[keyPath: keyPath] != patternValue {
                 throw MatchError.componentDoesNotMatch(keyPath)
             }
         }
-        try check(\.scheme)
-        try check(\.host)
-        try check(\.user)
-        try check(\.password)
-        try check(\.port)
-        try check(\.fragment)
+        try match(\.scheme)
+        try match(\.host)
+        try match(\.user)
+        try match(\.password)
+        try match(\.port)
+        try match(\.fragment)
 
         let pathParameters = Dictionary(
             zip(pattern.pathComponents, pathComponents)
-                .filter { $0.0.hasPrefix(":") }
+                .filter { (componentInPattern, _) in componentInPattern.hasPrefix(":") }
         ) { $1 }
-        let rewrittenPath = pattern.pathComponents.map { pathParameters[$0] ?? $0 }
-        guard rewrittenPath.elementsEqual(pathComponents) else {
+        let requiredPath = pattern.pathComponents.map { pathParameters[$0] ?? $0 }
+        guard requiredPath.elementsEqual(pathComponents) else {
             throw MatchError.pathDoesNotMatch
         }
 
@@ -35,24 +35,25 @@ public extension URL {
         else {
             throw MatchError.invalidURL
         }
+
         let queryDictionary = Dictionary(
             (components.queryItems ?? []).map { ($0.name, $0.value) }
         ) { $1 }
-        var queryParameters = Dictionary(
+        let queryParameters = Dictionary(
             (patternComponents.queryItems ?? [])
-                .filter { $0.name.hasPrefix(":") && $0.value != nil }
+                .filter { $0.name.hasPrefix(":") }
                 .compactMap { item in
                     queryDictionary[(item.name as NSString).substring(from: 1)]
                         .map { (item.name, $0) }
                 }
         ) { $1 }
-        let rewrittenQuery: [URLQueryItem] = (patternComponents.queryItems ?? [])
+        let requiredQueryItems = (patternComponents.queryItems ?? [])
             .compactMap { item in
                 if item.name.hasPrefix(":") {
                     if item.value != nil {
                         queryParameters[item.name]
-                            .map { URLQueryItem(name: (item.name as NSString).substring(from: 1), value: $0) }
-                            ?? item
+                            .map { .init(name: (item.name as NSString).substring(from: 1), value: $0) }
+                        ?? item
                     } else {
                         nil
                     }
@@ -61,19 +62,10 @@ public extension URL {
                 }
             }
 
-        let missingQueryItems = Set(rewrittenQuery).subtracting(components.queryItems ?? [])
+        let missingQueryItems = Set(requiredQueryItems).subtracting(components.queryItems ?? [])
         guard missingQueryItems.isEmpty else {
             throw MatchError.missingQueryItems(missingQueryItems)
         }
-
-        queryParameters.merge(
-            (patternComponents.queryItems ?? [])
-                .filter { $0.value == nil && $0.name.hasPrefix(":") }
-                .compactMap { item in
-                    queryDictionary[(item.name as NSString).substring(from: 1)]
-                        .map { (item.name, $0) }
-                }
-        ) { $1 }
 
         return pathParameters.merging(
             queryParameters.compactMap { key, value in value.map { (key, $0) } }
