@@ -21,10 +21,11 @@ public extension URL {
         try match(\.port)
         try match(\.fragment)
 
-        let pathParameters = Dictionary(
+        let pathParameters = try Dictionary(
             zip(pattern.pathComponents, pathComponents)
                 .filter { (componentInPattern, _) in componentInPattern.hasPrefix(":") }
-        ) { $1 }
+        ) { _, _ in throw MatchError.duplicateParameterInPattern }
+
         let requiredPath = pattern.pathComponents.map { pathParameters[$0] ?? $0 }
         guard requiredPath.elementsEqual(pathComponents) else {
             throw MatchError.pathDoesNotMatch
@@ -40,14 +41,16 @@ public extension URL {
             (components.queryItems ?? [])
                 .compactMap { item in item.value.map { (item.name, $0) } }
         ) { $1 }
-        let queryParameters = Dictionary(
+
+        let queryParameters = try Dictionary(
             (patternComponents.queryItems ?? [])
                 .filter { $0.name.hasPrefix(":") }
                 .compactMap { item in
                     queryDictionary[(item.name as NSString).substring(from: 1)]
                         .map { (item.name, $0) }
                 }
-        ) { $1 }
+        ) { _, _ in throw MatchError.duplicateParameterInPattern }
+
         let requiredQueryItems = (patternComponents.queryItems ?? [])
             .compactMap { item in
                 if item.name.hasPrefix(":") {
@@ -68,7 +71,7 @@ public extension URL {
             throw MatchError.missingQueryItems(missingQueryItems)
         }
 
-        return pathParameters.merging(queryParameters) { $1 }
+        return try pathParameters.merging(queryParameters) { _, _ in throw MatchError.duplicateParameterInPattern }
     }
 
     enum MatchError: Error, Equatable {
@@ -76,6 +79,7 @@ public extension URL {
         case pathDoesNotMatch
         case invalidURL
         case missingQueryItems(Set<URLQueryItem>)
+        case duplicateParameterInPattern
     }
 
     func fillPattern(_ params: [String: String]) throws -> URL {

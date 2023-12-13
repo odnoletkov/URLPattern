@@ -24,7 +24,7 @@ class URLMatchingTests: XCTestCase {
         )
     }
 
-    func testMatchErrors() {
+    func testMatchPath() {
         XCTAssertThrowsError(
             try URL(string: "path")!.match(pattern: URL(string: "scheme://")!)
         ) { XCTAssertEqual($0 as? URL.MatchError, .componentDoesNotMatch(\.scheme)) }
@@ -49,6 +49,12 @@ class URLMatchingTests: XCTestCase {
             try URL(string: "/")!.match(pattern: URL(string: "/")!)
         )
 
+        XCTAssertThrowsError(
+            try URL(string: "a/b/c")!.match(pattern: URL(string: "path/:p1/:p1")!)
+        ) { XCTAssertEqual($0 as? URL.MatchError, .duplicateParameterInPattern) }
+    }
+
+    func testMatchQuery() {
         XCTAssertThrowsError(
             try URL(string: "?")!.match(pattern: URL(string: "?a=b")!)
         ) { XCTAssertEqual($0 as? URL.MatchError, .missingQueryItems([.init(name: "a", value: "b")])) }
@@ -79,6 +85,23 @@ class URLMatchingTests: XCTestCase {
             try URL(string: "?a=b")!.match(pattern: URL(string: "?:a=a")!),
             [":a": "b"]
         )
+
+        XCTAssertEqual(
+            try URL(string: "?a=1&a=2")!.match(pattern: URL(string: "?:a=")!),
+            [":a": "2"]
+        )
+
+        XCTAssertThrowsError(
+            try URL(string: "?a=")!.match(pattern: URL(string: "?:a=&:a=")!)
+        ) { XCTAssertEqual($0 as? URL.MatchError, .duplicateParameterInPattern) }
+
+        XCTAssertThrowsError(
+            try URL(string: "?a=")!.match(pattern: URL(string: "?:a&:a")!)
+        ) { XCTAssertEqual($0 as? URL.MatchError, .duplicateParameterInPattern) }
+
+        XCTAssertThrowsError(
+            try URL(string: "path/p1?p=p2")!.match(pattern: URL(string: "path/:p?:p=")!)
+        ) { XCTAssertEqual($0 as? URL.MatchError, .duplicateParameterInPattern) }
     }
 
     func testFill() throws {
