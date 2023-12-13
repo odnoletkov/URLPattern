@@ -24,6 +24,13 @@ class URLMatchingTests: XCTestCase {
         )
     }
 
+    func testFIXMEMatchWithRequiredParameterMissingInTheOutput() throws {
+        XCTAssertEqual(
+            try URL(string: "?a")!.match(pattern: URL(string: "?:a=")!),
+            [:]
+        )
+    }
+
     func testMatchErrors() {
         XCTAssertThrowsError(
             try URL(string: "path")!.match(pattern: URL(string: "scheme://")!)
@@ -53,16 +60,32 @@ class URLMatchingTests: XCTestCase {
             try URL(string: "?")!.match(pattern: URL(string: "?a=b")!)
         ) { XCTAssertEqual($0 as? URL.MatchError, .missingQueryItems([.init(name: "a", value: "b")])) }
 
-        XCTAssertNoThrow(
-            try URL(string: "?")!.match(pattern: URL(string: "?:a")!)
+        XCTAssertEqual(
+            try URL(string: "?a=b")!.match(pattern: URL(string: "?a=b")!),
+            [:]
+        )
+
+        XCTAssertEqual(
+            try URL(string: "?")!.match(pattern: URL(string: "?:a")!),
+            [:]
         )
 
         XCTAssertThrowsError(
             try URL(string: "?")!.match(pattern: URL(string: "?:a=")!)
         ) { XCTAssertEqual($0 as? URL.MatchError, .missingQueryItems([.init(name: ":a", value: "")])) }
 
-        XCTAssertNoThrow(
-            try URL(string: "?a")!.match(pattern: URL(string: "?:a=")!)
+        XCTAssertEqual(
+            try URL(string: "?a")!.match(pattern: URL(string: "?:a=")!),
+            [:]
+        )
+
+        XCTAssertThrowsError(
+            try URL(string: "?")!.match(pattern: URL(string: "?:a=a")!)
+        ) { XCTAssertEqual($0 as? URL.MatchError, .missingQueryItems([.init(name: ":a", value: "a")])) }
+
+        XCTAssertEqual(
+            try URL(string: "?a=b")!.match(pattern: URL(string: "?:a=a")!),
+            [":a": "b"]
         )
     }
 
