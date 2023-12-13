@@ -1,12 +1,26 @@
 import XCTest
-@testable import URLMatch
+import URLMatch
 
-final class URLMatchTests: XCTestCase {
-    func testExample() throws {
-        // XCTest Documentation
-        // https://developer.apple.com/documentation/xctest
+// https://github.com/cweb/url-testing
 
-        // Defining Test Cases and Test Methods
-        // https://developer.apple.com/documentation/xctest/defining_test_cases_and_test_methods
+class URLMatchingTests: XCTestCase {
+    func test() {
+        XCTAssertEqual(
+            URL(string: "s://h/v1/v2?q1&q2=3&q3=x&q4")!
+                .match(pattern: URL(string: "s://h/:p1/v2?q1&:q2=&q3=x&q4")!),
+            [
+                ":p1": "v1",
+                ":q2": "3",
+            ]
+        )
+
+        XCTAssertEqual(
+            URL(string: "?required=1&optional=2&reqvalue=3")!
+                .match(pattern: URL(string: "?required=1&:optional&:notfound&:reqvalue=")!),
+            [
+                ":optional": "2",
+                ":reqvalue": "3",
+            ]
+        )
     }
 }
