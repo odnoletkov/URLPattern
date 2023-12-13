@@ -80,7 +80,7 @@ public extension URL {
 
     func fillPattern(_ params: [String: String]) throws -> URL {
         guard var components = URLComponents(url: self, resolvingAgainstBaseURL: false) else {
-            throw PatternFillError.invalidURL
+            throw FillError.invalidURL
         }
 
         components.path = NSString.path(
@@ -89,7 +89,7 @@ public extension URL {
                     if let providedValue = params[component] {
                         providedValue
                     } else {
-                        throw PatternFillError.missingParameter(component)
+                        throw FillError.missingParameter(component)
                     }
                 } else {
                     component
@@ -105,7 +105,7 @@ public extension URL {
                     if item.value == nil {
                         nil
                     } else {
-                        throw PatternFillError.missingParameter(item.name)
+                        throw FillError.missingParameter(item.name)
                     }
                 }
             } else {
@@ -114,13 +114,13 @@ public extension URL {
         }
 
         guard let url = components.url else {
-            throw PatternFillError.invalidURL
+            throw FillError.invalidURL
         }
 
         return url
     }
 
-    enum PatternFillError: Error, Equatable {
+    enum FillError: Error, Equatable {
         case missingParameter(String)
         case invalidURL
     }

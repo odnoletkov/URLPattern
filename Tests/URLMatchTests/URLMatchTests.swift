@@ -108,7 +108,7 @@ class URLMatchingTests: XCTestCase {
     func testFillErrors() {
         XCTAssertThrowsError(
             try URL(string: "path/:a")!.fillPattern([:])
-        ) { XCTAssertEqual($0 as? URL.PatternFillError, .missingParameter(":a")) }
+        ) { XCTAssertEqual($0 as? URL.FillError, .missingParameter(":a")) }
 
         XCTAssertEqual(
             try URL(string: "path/:a")!.fillPattern([":a": "a"]),
@@ -117,7 +117,7 @@ class URLMatchingTests: XCTestCase {
 
         XCTAssertThrowsError(
             try URL(string: "?:a=")!.fillPattern([:])
-        ) { XCTAssertEqual($0 as? URL.PatternFillError, .missingParameter(":a")) }
+        ) { XCTAssertEqual($0 as? URL.FillError, .missingParameter(":a")) }
 
         XCTAssertEqual(
             try URL(string: "?:a=b")!.fillPattern([":a": "a"]),
