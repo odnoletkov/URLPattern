@@ -1,16 +1,16 @@
 import Foundation
 
 public extension URL {
-    /// 1. When present in `pattern` scheme, host, user, password, port and fragment should match exactly
+    /// 1. When present in the receiver scheme, host, user, password, port and fragment should match exactly
     /// 2. Path should match exactly; path components prefixed with ':' will be captured in the output
-    /// 3. Pattern's query items should be a subset of receiver's query items
+    /// 3. Receiver's query items should be a subset of argument's query items
     /// 4. Prefix a query parameter's name with ':' and provide any value (empty recommended) to make it a required parameter captured in output
     /// 5. Prefix a query parameter's name with ':' and leave it without value to make it optional parameter captured in output
-    func match(pattern: URL) throws -> [String: String] {
+    func match(_ url: URL) throws -> [String: String] {
 
         func match<T: Comparable>(_ keyPath: KeyPath<URL, T?>) throws {
-            if let patternValue = pattern[keyPath: keyPath],
-               self[keyPath: keyPath] != patternValue {
+            if let patternValue = self[keyPath: keyPath],
+               url[keyPath: keyPath] != patternValue {
                 throw MatchError.componentDoesNotMatch(keyPath)
             }
         }
@@ -22,17 +22,17 @@ public extension URL {
         try match(\.fragment)
 
         let pathParameters = try Dictionary(
-            zip(pattern.pathComponents, pathComponents)
+            zip(self.pathComponents, url.pathComponents)
                 .filter { (componentInPattern, _) in componentInPattern.hasPrefix(":") }
         ) { _, _ in throw MatchError.duplicateParameterInPattern }
 
-        let requiredPath = pattern.pathComponents.map { pathParameters[$0] ?? $0 }
-        guard requiredPath.elementsEqual(pathComponents) else {
+        let requiredPath = self.pathComponents.map { pathParameters[$0] ?? $0 }
+        guard requiredPath.elementsEqual(url.pathComponents) else {
             throw MatchError.pathDoesNotMatch
         }
 
-        guard let components = URLComponents(url: self, resolvingAgainstBaseURL: false),
-              let patternComponents = URLComponents(url: pattern, resolvingAgainstBaseURL: false)
+        guard let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
+              let patternComponents = URLComponents(url: self, resolvingAgainstBaseURL: false)
         else {
             throw MatchError.invalidURL
         }
