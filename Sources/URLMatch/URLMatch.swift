@@ -37,7 +37,8 @@ public extension URL {
         }
 
         let queryDictionary = Dictionary(
-            (components.queryItems ?? []).map { ($0.name, $0.value) }
+            (components.queryItems ?? [])
+                .compactMap { item in item.value.map { (item.name, $0) } }
         ) { $1 }
         let queryParameters = Dictionary(
             (patternComponents.queryItems ?? [])
@@ -67,9 +68,7 @@ public extension URL {
             throw MatchError.missingQueryItems(missingQueryItems)
         }
 
-        return pathParameters.merging(
-            queryParameters.compactMap { key, value in value.map { (key, $0) } }
-        ) { $1 }
+        return pathParameters.merging(queryParameters) { $1 }
     }
 
     enum MatchError: Error, Equatable {
