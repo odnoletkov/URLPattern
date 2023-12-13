@@ -1,11 +1,17 @@
 import Foundation
 
 public extension URL {
+    
+    /// Match `url` against pattern in the receiver
+    ///
     /// 1. When present in the receiver scheme, host, user, password, port and fragment should match exactly
     /// 2. Path should match exactly; path components prefixed with ':' will be captured in the output
     /// 3. Receiver's query items should be a subset of argument's query items
-    /// 4. Prefix a query parameter's name with ':' and provide any value (empty recommended) to make it a required parameter captured in output
-    /// 5. Prefix a query parameter's name with ':' and leave it without value to make it optional parameter captured in output
+    /// 4. To capture required query parameter: prefix it with ':' and provide any value (empty recommended) in the pattern
+    /// 5. To capture optional query parameter: prefix it with ':' and leave it without value (no '=' sign) in the pattern
+    ///
+    /// - Parameter url: URL to match against pattern in the receiver
+    /// - Returns: Parameters captured on successful match; keys preserve the ':' prefix
     func match(_ url: URL) throws -> [String: String] {
 
         func match<T: Comparable>(_ keyPath: KeyPath<URL, T?>) throws {
@@ -81,7 +87,13 @@ public extension URL {
         case missingQueryItems(Set<URLQueryItem>)
         case duplicateParameterInPattern
     }
-
+    
+    /// Inflate URL pattern in the receiver with provided parameter values
+    ///
+    /// See `URL.match(_: URL)`
+    ///
+    /// - Parameter params: values to substitute parameters in the pattern
+    /// - Returns: URL with substituted values
     func inflate(_ params: [String: String]) throws -> URL {
         guard var components = URLComponents(url: self, resolvingAgainstBaseURL: false) else {
             throw InflateError.invalidURL
