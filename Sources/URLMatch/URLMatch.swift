@@ -129,7 +129,7 @@ public extension URL {
         return url
     }
 
-    enum PatternFillError: Error {
+    enum PatternFillError: Error, Equatable {
         case missingParameter(String)
         case invalidURL
     }

@@ -112,4 +112,34 @@ class URLMatchingTests: XCTestCase {
             URL(string: "?required=1&optional=2&reqvalue=3")!
         )
     }
+
+    func testFillErrors() {
+        XCTAssertThrowsError(
+            try URL(string: "path/:a")!.fillPattern([:])
+        ) { XCTAssertEqual($0 as? URL.PatternFillError, .missingParameter(":a")) }
+
+        XCTAssertEqual(
+            try URL(string: "path/:a")!.fillPattern([":a": "a"]),
+            URL(string: "path/a")!
+        )
+
+        XCTAssertThrowsError(
+            try URL(string: "?:a=")!.fillPattern([:])
+        ) { XCTAssertEqual($0 as? URL.PatternFillError, .missingParameter(":a")) }
+
+        XCTAssertEqual(
+            try URL(string: "?:a=b")!.fillPattern([":a": "a"]),
+            URL(string: "?a=a")!
+        )
+
+        XCTAssertEqual(
+            try URL(string: "?:a")!.fillPattern([:]),
+            URL(string: "?")!
+        )
+
+        XCTAssertEqual(
+            try URL(string: "?:a")!.fillPattern([":a": "a"]),
+            URL(string: "?a=a")!
+        )
+    }
 }
